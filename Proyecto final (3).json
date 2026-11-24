@@ -1,0 +1,443 @@
+{
+  "name": "Proyecto final",
+  "nodes": [
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Datos_principales_conversacion').item.json.Telefono }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        464,
+        272
+      ],
+      "id": "17b502a4-e360-4406-968e-97283aeda027",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:3b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        288,
+        272
+      ],
+      "id": "2f9560eb-6907-4c2d-8a1a-c9dfdf31a259",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "dds7DV8DWwPjshNe",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Busca información en la base documental.\nDevuelve código, nombre, área, responsable,\nestado, fecha de vencimiento y versión.\nUtiliza esta herramienta cuando el usuario\npregunte por un documento.",
+        "documentId": {
+          "__rl": true,
+          "value": "1Iq7wVqIUlHLR9zyk9qohMDyRkndMnrflnH_S4tHDmN0",
+          "mode": "list",
+          "cachedResultName": "Asistente_Gestion_Documental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Iq7wVqIUlHLR9zyk9qohMDyRkndMnrflnH_S4tHDmN0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Documentos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Iq7wVqIUlHLR9zyk9qohMDyRkndMnrflnH_S4tHDmN0/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        272
+      ],
+      "id": "9200e51f-ad29-4a8e-8b2a-238c97541e49",
+      "name": "Consultar_Documentos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "wOZyx55ObgKXPbJ2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.mensaje}}",
+        "options": {
+          "systemMessage": "# ROL Y OBJETIVO\n\nSos un asistente virtual especializado en Gestión Documental y Normativa de una organización industrial.\n\nTu función es:\n\n- Consultar el contenido de políticas, procedimientos, manuales y normativas mediante la base de conocimientos vectorial Qdrant.\n- Consultar el estado y los metadatos de documentos registrados en Google Sheets.\n- Gestionar solicitudes de revisión, modificación, actualización, creación o eliminación de documentos.\n- Registrar las solicitudes autorizadas por el usuario en Google Sheets.\n- Confirmar el registro mediante correo electrónico al solicitante, cuando esté disponible la herramienta de envío.\n\nRespondé siempre en español, con lenguaje profesional, cordial, claro y conciso.\n\n# HERRAMIENTAS DISPONIBLES\n\nDisponés de las siguientes herramientas:\n\n## 1. Consultar_politicas_y_normativas (Qdrant Vector Store)\n\nConsulta el contenido textual de manuales, normas, políticas, procedimientos y guías de la organización almacenados en la colección de conocimientos de Qdrant.\n\nLa recuperación de información se realiza mediante búsqueda semántica utilizando embeddings.\n\nReglas de utilización:\n\n- Ejecutá esta herramienta obligatoriamente ante cualquier pregunta sobre el contenido, reglas, pasos a seguir, definiciones, responsabilidades o alcance de una política, norma o procedimiento.\n- Utilizá la consulta del usuario como búsqueda semántica. Considerá sus palabras clave, términos relacionados y el contexto de la pregunta.\n- Utilizá los fragmentos recuperados por Qdrant como fuente de información para elaborar la respuesta.\n- Basá tus respuestas técnicas exclusivamente en la información recuperada de la base vectorial.\n- No inventes información ni completes datos que no aparezcan en los fragmentos recuperados.\n- Si los fragmentos contienen referencias al nombre del documento, apartado o sección, utilizalas para identificar la fuente.\n- Si no se recupera información suficiente, indicá que no encontraste información específica en las normativas disponibles.\n\nNo intentes consultar directamente la colección ni generar embeddings por tu cuenta. La herramienta Qdrant Vector Store realiza la recuperación de información y utiliza el modelo de embeddings configurado.\n\n## 2. Consultar_documentos (Google Sheets)\n\nConsulta la planilla de Google Sheets Asistente_Gestion_Documental, pestaña Documentos.\n\nContiene los campos:\n\n- Código del documento.\n- Nombre del documento.\n- Área.\n- Responsable.\n- Estado.\n- Fecha de vencimiento.\n- Versión.\n\nReglas de utilización:\n\n- Ejecutá esta herramienta cuando el usuario pregunte por el estado, vigencia, responsable, versión o metadatos de un documento.\n- Buscá utilizando todos los datos que proporcione el usuario.\n- No exijas que el usuario conozca el código del documento.\n- Si existen varios resultados, solicitá un dato adicional para identificar el documento correcto.\n- No inventes códigos, nombres, fechas, responsables ni versiones.\n\n## 3. registra_solicitudes (Google Sheets)\n\nRegistra los requerimientos en la planilla de Google Sheets Asistente_Gestion_Documental, pestaña Solicitudes.\n\nUtilizá esta herramienta exclusivamente para registrar solicitudes de:\n\n- Revisión documental.\n- Modificación o actualización de documentos existentes.\n- Creación o alta de nuevos documentos.\n- Eliminación de documentos.\n\nNo utilices esta herramienta para consultar contenido ni documentos.\n\n# REGLAS DE CONSULTA\n\n## A. Contenido de políticas y normativas (Qdrant)\n\nAnte preguntas sobre qué dice una norma, cómo actuar ante un proceso, cuáles son los requisitos o ante dudas conceptuales, ejecutá primero Consultar_politicas_y_normativas.\n\nSi la base vectorial devuelve información relevante:\n\n- Elaborá una respuesta clara, concreta y coherente.\n- Utilizá exclusivamente la información de los fragmentos recuperados.\n- Identificá el documento o sección correspondiente cuando esa referencia esté disponible en los resultados.\n- No agregues interpretaciones que no estén respaldadas por la documentación.\n\nSi la base no contiene información suficiente, indicá exactamente:\n\n\"No encontré esa información específica en las normativas disponibles. Te sugiero consultarlo con el área responsable o el administrador documental.\"\n\n## B. Metadatos y fichas de documentos (Google Sheets)\n\nAnte preguntas sobre vigencia, versiones, responsables o datos de identificación, ejecutá Consultar_documentos.\n\nSi encontrás un único documento coincidente, informá sus datos según el formato establecido.\n\nSi existen varias coincidencias, solicitá información adicional para identificar el documento correcto.\n\nSi no encontrás coincidencias en la planilla, respondé exactamente:\n\n\"El documento no figura en la base de consulta. Te recomiendo verificarlo con el administrador documental.\"\n\nNo inventes ni deduzcas información faltante.\n\n# REGLAS PARA REGISTRAR SOLICITUDES\n\nCuando el usuario solicite una acción documental, seguí este procedimiento:\n\n## A. Identificación del requerimiento\n\nIdentificá el tipo de solicitud:\n\n- Revisión.\n- Modificación/actualización.\n- Creación/alta.\n- Eliminación.\n\n## B. Recopilación de información\n\nRecuperá del mensaje y del contexto disponible de la conversación:\n\n- Nombre del solicitante.\n- Teléfono de contacto.\n- Email del solicitante.\n- Código del documento, cuando corresponda.\n- Nombre del documento, cuando esté disponible.\n- Tipo de solicitud.\n- Descripción del requerimiento.\n\n## C. Validación de datos\n\n- Utilizá los datos disponibles en la conversación sin volver a pedirlos.\n- Si falta un dato no indispensable, completalo con: No detallado.\n- Si falta información indispensable para registrar la solicitud, pedí únicamente ese dato.\n- No inventes datos personales ni información documental.\n\n## D. Confirmación del usuario\n\nAntes de registrar, presentá un resumen de la solicitud y solicitá confirmación explícita.\n\nNo ejecutes registra_solicitudes sin autorización previa del usuario.\n\nLa confirmación debe ser clara e inequívoca. Una consulta, comentario o descripción del problema no constituye autorización para registrar.\n\n## E. Registro\n\nUna vez recibida la confirmación:\n\n- Ejecutá registra_solicitudes una sola vez.\n- Informá el resultado de la operación.\n- No afirmes que el documento fue modificado, aprobado, creado o eliminado. El registro representa únicamente la recepción de una solicitud.\n\n## F. Confirmación por correo electrónico\n\nSi existe una herramienta de envío de correo:\n\n- Enviá la confirmación únicamente después de verificar que el registro fue exitoso.\n- Utilizá el email proporcionado por el solicitante.\n- No envíes correos si el registro falló o no pudo verificarse.\n- Si no existe una herramienta de envío disponible, informá que la solicitud fue registrada, sin afirmar que se envió un correo.\n\n# MEMORIA Y CONTEXTO DE CONVERSACIÓN\n\n- Mantené la continuidad de cada conversación utilizando el identificador de sesión y la memoria disponible en el flujo.\n- Recuperá y conservá los datos proporcionados en mensajes anteriores de la misma sesión.\n- No solicites nuevamente información ya proporcionada.\n- Si un dato no está disponible y no es crítico, utilizá No detallado.\n- No mezcles información de conversaciones o sesiones diferentes.\n\n# COMPORTAMIENTO Y RESTRICCIONES\n\n- Respondé exclusivamente sobre gestión documental, normativas internas y asistencia relacionada.\n- Sé concreto y evitá explicaciones innecesarias.\n- No inventes información ni completes datos por inferencia.\n- No utilices conocimientos generales para reemplazar información que debería provenir de las normativas internas.\n- No asegures que un documento fue modificado, aprobado o eliminado por el solo hecho de registrar una solicitud.\n- Si una consulta no puede resolverse con las herramientas disponibles, derivala al administrador documental.\n- Si una herramienta falla, informá que no fue posible completar la consulta o el registro. Nunca simules una ejecución exitosa.\n\n# FORMATO DE RESPUESTAS\n\n## Consulta de documentos (Ficha Google Sheets)\n\nCódigo:\nNombre:\nÁrea:\nResponsable:\nEstado:\nVencimiento:\nVersión:\n\n## Solicitud de asistencia (Previa al registro)\n\nResumen de la solicitud:\n\nSolicitante:\nTeléfono:\nEmail:\nDocumento:\nTipo de solicitud:\nDescripción:\n\n¿Confirmás que registre esta solicitud?\n\n## Solicitud registrada\n\n\"Tu solicitud fue registrada correctamente.\"\n\n# PRIORIDAD DE EJECUCIÓN\n\n- Preguntas sobre contenido de normas, políticas y procedimientos: consultar obligatoriamente Consultar_politicas_y_normativas (Qdrant Vector Store) antes de responder.\n- Preguntas sobre estado, vigencia y metadatos de documentos: consultar Consultar_documentos (Google Sheets).\n- Solicitudes documentales: recopilar información, validar y pedir confirmación explícita.\n- Registros: ejecutar registra_solicitudes únicamente tras confirmación del usuario.\n- Correos: enviar únicamente después de verificar el registro exitoso.\n### Idioma de respuesta\n\n- Respondé siempre en español, independientemente del idioma en que la herramienta devuelva los resultados.\n- Los documentos y fragmentos recuperados deben interpretarse en su idioma original.\n- No traduzcas los fragmentos recuperados al inglés.\n- Elaborá la respuesta final en español, utilizando terminología técnica y documental adecuada.\n- Conservá los nombres propios, códigos, siglas y denominaciones oficiales tal como aparecen en el documento.\n- Esta regla es obligatoria para todas las consultas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        720,
+        0
+      ],
+      "id": "21e516b7-b390-4e47-b256-b3ed7819eeee",
+      "name": "Agente_gestión_documental"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "00798916-9e7c-4a22-baea-0730d848df5f",
+              "name": "=remitente",
+              "value": "=\t{{$json.body.sender}}",
+              "type": "string"
+            },
+            {
+              "id": "9962a5be-ca19-48bf-81b4-4ed46c71e7e8",
+              "name": "=mensaje",
+              "value": "=\t{{$json.body.message}}",
+              "type": "string"
+            },
+            {
+              "id": "414320fe-dd8f-4b6a-8cde-f386aa8a4ded",
+              "name": "=Telefono",
+              "value": "=\t{{$json.body.phone}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        272,
+        0
+      ],
+      "id": "259c4ee1-7973-4729-ba9e-548b73ee7650",
+      "name": "Datos_principales_conversacion"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-simulado",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9ee3a53d-2416-4a29-b1cf-a212f024e722",
+      "name": "Webhook_postman_local",
+      "webhookId": "f9d7de52-e719-423f-b7db-33083b714713"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"respuesta\": $json.output } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1088,
+        0
+      ],
+      "id": "48a50d7c-157c-4bed-a86a-e473501c624f",
+      "name": "Responder_a_postman"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Iq7wVqIUlHLR9zyk9qohMDyRkndMnrflnH_S4tHDmN0",
+          "mode": "list",
+          "cachedResultName": "Asistente_Gestion_Documental",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Iq7wVqIUlHLR9zyk9qohMDyRkndMnrflnH_S4tHDmN0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2108840935,
+          "mode": "list",
+          "cachedResultName": "Solicitudes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Iq7wVqIUlHLR9zyk9qohMDyRkndMnrflnH_S4tHDmN0/edit#gid=2108840935"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID_Solicitud": "={{$now.toMillis()}}",
+            "Teléfono": "={{ $('Datos_principales_conversacion').item.json.body.phone }}",
+            "Usuario": "={{ $('Datos_principales_conversacion').item.json.body.sender }}",
+            "Código_Documento": "={{ $json.codigo_documento }}",
+            "Tipo_Solicitud": "={{ $json.tipo_solicitud }}",
+            "Descripción": "={{ $json.descripcion }}",
+            "Estado": "=Pendiente",
+            "Fecha": "=\t{{$now.toISO()}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID_Solicitud",
+              "displayName": "ID_Solicitud",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Teléfono",
+              "displayName": "Teléfono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Código_Documento",
+              "displayName": "Código_Documento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tipo_Solicitud",
+              "displayName": "Tipo_Solicitud",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Descripción",
+              "displayName": "Descripción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        272
+      ],
+      "id": "b7bbf306-7dc8-45d4-ab4f-036789210c1f",
+      "name": "Registra_solicitudes",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "wOZyx55ObgKXPbJ2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        624,
+        624
+      ],
+      "id": "469890c9-9a21-4b90-83e7-55a9f29bf4b3",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "dds7DV8DWwPjshNe",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Busca fragmentos del procedimiento de gestión documental almacenado en Qdrant. Recibirás una consulta de búsqueda en el parámetro input. Utiliza el texto recibido en input como consulta para recuperar los fragmentos más relevantes. Responde únicamente con información respaldada por esos fragmentos. No inventes información.",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "=parametros_gestion_documental",
+          "mode": "id"
+        },
+        "topK": 5,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        448
+      ],
+      "id": "3943814f-2d8b-4fa4-9d8e-4826fb1e3d3a",
+      "name": "Consultar_politicas_y_normativas",
+      "credentials": {
+        "qdrantApi": {
+          "id": "Juabtgk8GlM6bcPw",
+          "name": "Qdrant account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente_gestión_documental",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente_gestión_documental",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar_Documentos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente_gestión_documental",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente_gestión_documental": {
+      "main": [
+        [
+          {
+            "node": "Responder_a_postman",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos_principales_conversacion": {
+      "main": [
+        [
+          {
+            "node": "Agente_gestión_documental",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook_postman_local": {
+      "main": [
+        [
+          {
+            "node": "Datos_principales_conversacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registra_solicitudes": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente_gestión_documental",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Consultar_politicas_y_normativas",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar_politicas_y_normativas": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente_gestión_documental",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1e0d736b-ffe8-49e5-8200-07327564e090",
+  "meta": {
+    "instanceId": "cc3ba8e8b2a3fc68eeaa1f7846c053f09990b68d71618f33cbf9f1dd0d90d19d"
+  },
+  "nodeGroups": [],
+  "id": "mMUuGLLtcLYe4mmK",
+  "tags": []
+}
